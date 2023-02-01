@@ -3,6 +3,7 @@ const  JWT  = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const userModel = require("../models/userModel");
 const { uploadFile } = require("./aws");
+const { default: mongoose } = require("mongoose");
 
 let validateMobile = /^[6-9][0-9]{9}$/;
 
@@ -10,24 +11,11 @@ const createUser = async(req,res)=>{
     try {
     let data = req.body
     if (Object.keys(data).length === 0) return res.status(400).send({ message: "plz provide user's data" });
-
-    let imageUrl = req.files
-    if(!imageUrl) return res.status(400).send({status:false,message:"profileImaje is mandatory"})
     
-    let urlType = imageUrl[0].originalname;
-    if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
     
-    let uploadedFileURL;
-    if (imageUrl && imageUrl.length > 0) {
-      uploadedFileURL = await uploadFile(imageUrl[0]);
-    } else {
-      return res.status(400).send({ msg: "No file found" });
-    }
-
 
     let {fname,lname,email,phone,password,address} = data
-    let newAddress = JSON.parse(address)
-    let {shipping,billing} = newAddress
+   
 
 
 
@@ -35,19 +23,24 @@ const createUser = async(req,res)=>{
 
 
 
-if (!fname) return res.status(400).send({ status: false, message: "name is mendatory" });
-if (!validator.isAlpha(fname.split(" ").join(""))) return res.status(400).send({ status: false, message: "plz enter valid name" });
+if (!fname) return res.status(400).send({ status: false, message: "first name is mandatory" });
+if (!validator.isAlpha(fname)) return res.status(400).send({ status: false, message: "plz enter valid first name,  includes only alphabates" });
+
+if (!lname) return res.status(400).send({ status: false, message: "last name is mandatory" });
+if (!validator.isAlpha(lname)) return res.status(400).send({ status: false, message: "plz enter valid last name,  includes only alphabates" });
 
 
-if (!phone) return res.status(400).send({ status: false, message: "phone is mendatory" });
-if (!validateMobile.test(phone)) return res.status(400).send({ status: false, message: "plz enter valid mobile number" });
-
-
-if (!email)return res.status(400).send({ status: false, message: "email is mendatory" });
+if (!email)return res.status(400).send({ status: false, message: "email is mandatory" });
 if (!validator.isEmail(email.trim()))return res.status(400).send({ status: false, message: "plz enter valid email" });
+let checkEmailExist = await userModel.findOne({email})
+if(checkEmailExist) return res.status(409).send({status:false,message:"This email already exist"})
 
+if (!phone) return res.status(400).send({ status: false, message: "phone is mandatory" });
+if (!validateMobile.test(phone)) return res.status(400).send({ status: false, message: "plz enter valid Indian mobile number" });
+let checkPhoneExist = await userModel.findOne({phone})
+if(checkPhoneExist) return res.status(409).send({status:false,message:"This phone no. already exist"})
 
-if (!password) return res.status(400).send({ status: false, message: "password is mendatory" });
+if (!password) return res.status(400).send({ status: false, message: "password is mandatory" });
 if (password.length > 15 || password.length < 8)return res.status(400).send({
     status: false,
     mesage: "password must be greater than 8 char and less than 15 char",
@@ -56,12 +49,15 @@ if (password.length > 15 || password.length < 8)return res.status(400).send({
 if (!validator.isStrongPassword(password)) return res.status(400).send({
     status: false,
     message:
-      "plz enter valid password, must contain 1 Uppercase,1 Lowercase,1 special-character",
+      "plz enter strong password, must contain 1 Uppercase,1 Lowercase,1 special-character",
   });
 
 
-
-if(!address || (Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
+  
+  
+  if(!address || (Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
+  let newAddress = JSON.parse(address)
+  let {shipping,billing} = newAddress
 
 if(!shipping || (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
 if(!shipping.street || !shipping.city || !shipping.pincode) return res.status(400).send({status:false,message:"Shipping address is incomplete"})
@@ -80,16 +76,22 @@ if (!/^[^0][0-9]{2}[0-9]{3}$/.test(billing.pincode))  return res.status(400).sen
 
 
 
+
+let imageUrl = req.files
+    if(imageUrl.length===0) return res.status(400).send({status:false,message:"profileImaje is mandatory"})
+    
+    let urlType = imageUrl[0].originalname;
+    if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
+    
+    let uploadedFileURL;
+    if (imageUrl.length > 0) {
+      uploadedFileURL = await uploadFile(imageUrl[0]);
+    } 
+
+    if(!uploadedFileURL) return res.status(400).send({ msg: "No file found" });
+   
+
 //--------------------------------Duplicate email, phone --------------------------------------------
-
-
-
-    let checkEmailExist = await userModel.findOne({email})
-    if(checkEmailExist) return res.status(409).send({status:false,message:"This email already exist"})
-
-
-    let checkPhoneExist = await userModel.findOne({phone})
-    if(checkPhoneExist) return res.status(409).send({status:false,message:"This phone no. already exist"})
 
 
     let bcryptPass = await bcrypt.hash(password, 10)
@@ -118,7 +120,7 @@ const loginUser = async (req,res)=>{
     if (Object.keys(data).length === 0) return res.status(400).send({ message: "plz provide user's data" });
     let {email,password} = data
         
-    if (!email)return res.status(400).send({ status: false, message: "email is mendatory" });
+    if (!email)return res.status(400).send({ status: false, message: "email is mandatory" });
     if (!validator.isEmail(email.trim()))return res.status(400).send({ status: false, message: "plz enter valid email" });
 
     let findUser = await userModel.findOne({email})
@@ -138,7 +140,7 @@ const loginUser = async (req,res)=>{
 
 
      let userId = findUser._id
-     let token = JWT.sign({ userId: userId }, "group2project-5", {expiresIn: 1440});
+     let token = JWT.sign({ userId: userId }, "group2project-5", {expiresIn: 8600});
   
 
      res.status(200).send({status:true,message:"User login successfull", data:{userId:userId, token:token}})
@@ -155,8 +157,172 @@ const loginUser = async (req,res)=>{
 
 
 
+const getUser = async (req, res) => {
+    try {
+      let userId = req.params.userId;
+
+      if(!userId) return res.status(400).send({ status: false, message: "You can not access your profile without valid userId" });
+
+      if (!mongoose.isValidObjectId(userId)) return res.status(400).send({ status: false, message: "userId is not vaild" });
+      
+      if (userId != req.tokenDetails.userId) return res.status(401).send({ status: false, message: "This userId is not authenticate" });
+      
+      let getUser = await userModel.findOne({ _id: userId });
+        console.log(getUser);
+      return res.status(200).send({ status: true, message: "User profile details", data: getUser });
+
+    } catch (err) {
+
+      return res.status(500).send({ status: false, message: err.message });
+
+    }
+  };
+
+
+const updateUser = async(req,res)=>{
+    let data = req.body
+    let userId = req.params.userId
+    if (Object.keys(data).length === 0) return res.status(400).send({ message: "plz provide user's data" });
+    
+    
+
+    let {fname,lname,email,phone,password,address} = data
+   
+
+
+
+///------------------------- Validation------------------------------------------
+
+
+
+if (fname) {
+
+    if (!validator.isAlpha(fname)) return res.status(400).send({ status: false, message: "plz enter valid first name,  includes only alphabates" });
+}
+
+if (lname){
+
+    if (!validator.isAlpha(lname)) return res.status(400).send({ status: false, message: "plz enter valid last name,  includes only alphabates" });
+}
+
+
+if (email){
+
+    if (!validator.isEmail(email.trim()))return res.status(400).send({ status: false, message: "plz enter valid email" });
+    let checkEmailExist = await userModel.findOne({email})
+    if(checkEmailExist) return res.status(409).send({status:false,message:"This email already exist, enter another email"})
+}
+
+if (phone){
+
+    if (!validateMobile.test(phone)) return res.status(400).send({ status: false, message: "plz enter valid Indian mobile number" });
+    let checkPhoneExist = await userModel.findOne({phone})
+    if(checkPhoneExist) return res.status(409).send({status:false,message:"This phone no. already exist, enter new number"})
+}
+
+if (password) {
+
+    if (password.length > 15 || password.length < 8)return res.status(400).send({
+        status: false,
+        mesage: "password must be greater than 8 char and less than 15 char",
+      });
+
+      if (!validator.isStrongPassword(password)) return res.status(400).send({
+          status: false,
+          message:
+            "plz enter strong password, must contain 1 Uppercase,1 Lowercase,1 special-character",
+        });
+
+        var bcryptPass = await bcrypt.hash(password, 10)
+}
+
+
+
+  
+if(address){
+    var newAddress = JSON.parse(address)
+    if((Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
+      let {shipping,billing} = newAddress
+
+
+    if(shipping){
+
+        if( (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
+        if(shipping.street){
+
+            if(!validator.isAlphanumeric(shipping.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+        }
+        if(shipping.city){
+
+            if(!validator.isAlpha(shipping.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
+        }
+        if(shipping.pincode){
+
+            if (!/^[^0][0-9]{2}[0-9]{3}$/.test(shipping.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
+        }
+        
+    }
+
+
+
+    if(billing){
+
+        if( (Object.keys(billing).length===0)) return res.status(400).send({status:false,message:"Billing address is required"})
+        if(billing.street){
+
+            if(!validator.isAlphanumeric(billing.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+        }
+        if(billing.city){
+
+            if(!validator.isAlpha(billing.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
+        }
+        if(billing.pincode){
+
+            if (!/^[^0][0-9]{2}[0-9]{3}$/.test(billing.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
+        }
+        
+    }
 
 
 
 
-module.exports = {createUser,loginUser}
+
+  }
+
+
+
+let imageUrl = req.files
+if(imageUrl.length>0){
+   
+    
+    let urlType = imageUrl[0].originalname;
+    if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
+    var uploadedFileURL;
+    if (imageUrl.length > 0) {
+      uploadedFileURL = await uploadFile(imageUrl[0]);
+    } 
+    
+    if(!uploadedFileURL) return res.status(400).send({ msg: "No file found" });
+}
+
+// if(imageUrl.length===0) return res.status(400).send({status:false,message:"profile Imaje is mandatory"})
+    
+   
+
+//--------------------------------Duplicate email, phone --------------------------------------------
+
+   
+ 
+ 
+    let userUpdateData = {fname,lname,email,phone,password:bcryptPass,address:newAddress,profileImage:uploadedFileURL}
+    
+    console.log(userUpdateData);
+    let updateUser = await userModel.findOneAndUpdate({_id:userId},userUpdateData,{new:true})
+    console.log(updateUser);
+
+    res.status(200).send({status:true, message:"User profile updated",data:updateUser})
+}
+
+
+
+module.exports = {createUser,loginUser,getUser,updateUser}
