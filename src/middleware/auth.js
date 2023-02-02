@@ -14,7 +14,7 @@ const verifyToken = async (req,res,next)=>{
     let token = req.headers["authorization"]
     if(!token) return res.status(400).send({status:false,message:"Token is mandatory"})
     token = token.slice(7, token.length)
-    console.log(token)
+    
 
     // if(!validator.isJWT(token)) return res.status(400).send({status:false,msg:"Token is invalid"})
 

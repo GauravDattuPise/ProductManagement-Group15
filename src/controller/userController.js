@@ -4,6 +4,7 @@ const bcrypt = require("bcrypt");
 const userModel = require("../models/userModel");
 const { uploadFile } = require("./aws");
 const { default: mongoose } = require("mongoose");
+const { findOne } = require("../models/userModel");
 
 let validateMobile = /^[6-9][0-9]{9}$/;
 
@@ -181,7 +182,8 @@ const getUser = async (req, res) => {
 
 
 const updateUser = async(req,res)=>{
-    let data = req.body
+    try {
+        let data = req.body
     let userId = req.params.userId
     if (Object.keys(data).length === 0) return res.status(400).send({ message: "plz provide user's data" });
     
@@ -241,68 +243,80 @@ if (password ||(password=="")) {
 }
 
 
+let getUserData = await userModel.findOne({_id:userId}).select({address:1})
+
+
+let userNewAddress = getUserData.address
 
   
 if(address ){
     
     var newAddress = JSON.parse(address)
-    // console.log(newAddress);
+   
+    console.log(newAddress);
     if((Object.keys(newAddress).length===0)) return res.status(400).send({status:false,message:"Address is required"})
       let {shipping,billing,...rest} = newAddress
       if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields[shipping,billing]in address"})
+
     
 
 
 
     if(shipping){
+        if( (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
+
         let {street,city,pincode,...rest} = shipping
         if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields[street,city,pincode] in shipping"})
    
 
 
-        if( (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
         if(shipping.street){
 
-            if(!validator.isAlphanumeric(shipping.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+            if(!/^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/.test(shipping.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+            userNewAddress.shipping.street= shipping.street
         }
         if(shipping.city){
 
             if(!validator.isAlpha(shipping.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
+            userNewAddress.shipping.city= shipping.city
         }
         if(shipping.pincode){
 
             if (!/^[^0][0-9]{2}[0-9]{3}$/.test(shipping.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
+            userNewAddress.shipping.pincode= shipping.pincode
         }
         
     }
 
-
+    // let validateTitle = /^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/;
 
     if(billing){
+        if( (Object.keys(billing).length===0)) return res.status(400).send({status:false,message:"Billing address is required"})
         let {street,city,pincode,...rest} = billing
         if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields[street,city,pincode] in billing"})
    
 
-        if( (Object.keys(billing).length===0)) return res.status(400).send({status:false,message:"Billing address is required"})
         if(billing.street){
 
-            if(!validator.isAlphanumeric(billing.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+            if(!/^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/.test(billing.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+            userNewAddress.billing.street= billing.street
         }
         if(billing.city){
 
             if(!validator.isAlpha(billing.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
+            userNewAddress.billing.city= billing.city
         }
         if(billing.pincode){
 
             if (!/^[^0][0-9]{2}[0-9]{3}$/.test(billing.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
+            userNewAddress.billing.pincode= billing.pincode
         }
         
     }
 
 
 
-
-
+    
   }
 
 
@@ -330,13 +344,18 @@ if(imageUrl.length>0){
    
  
  
-    let userUpdateData = {fname,lname,email,phone,password:bcryptPass,address:newAddress,profileImage:uploadedFileURL}
+    let userUpdateData = {fname,lname,email,phone,password:bcryptPass,address:userNewAddress,profileImage:uploadedFileURL}
     
-    console.log(userUpdateData);
+   
     let updateUser = await userModel.findOneAndUpdate({_id:userId},userUpdateData,{new:true})
-    console.log(updateUser);
+  
 
     res.status(200).send({status:true, message:"User profile updated",data:updateUser})
+
+    } catch (error) {
+        console.log("error in updateUser",error.message)
+        res.status(500).send({status:false,message:error.message})
+    }
 }
 
 
