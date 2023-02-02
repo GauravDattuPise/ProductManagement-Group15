@@ -55,6 +55,7 @@ if (!validator.isStrongPassword(password)) return res.status(400).send({
 
   
   
+  
   if(!address || (Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
   let newAddress = JSON.parse(address)
   let {shipping,billing} = newAddress
@@ -186,7 +187,10 @@ const updateUser = async(req,res)=>{
     
     
 
-    let {fname,lname,email,phone,password,address} = data
+    let {fname,lname,email,phone,password,address,...rest} = data
+
+    // if(rest) return res.send("hii")
+    if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields like[fname,lname,email,phone,password,address] to update user details"})
    
 
 
@@ -195,32 +199,32 @@ const updateUser = async(req,res)=>{
 
 
 
-if (fname) {
+if (fname ||(fname=="")) {
 
-    if (!validator.isAlpha(fname)) return res.status(400).send({ status: false, message: "plz enter valid first name,  includes only alphabates" });
+    if (!validator.isAlpha(fname) ) return res.status(400).send({ status: false, message: "plz enter valid first name,  includes only alphabates" });
 }
 
-if (lname){
+if (lname ||(lname=="")){
 
     if (!validator.isAlpha(lname)) return res.status(400).send({ status: false, message: "plz enter valid last name,  includes only alphabates" });
 }
 
 
-if (email){
+if (email ||(email=="")){
 
     if (!validator.isEmail(email.trim()))return res.status(400).send({ status: false, message: "plz enter valid email" });
     let checkEmailExist = await userModel.findOne({email})
     if(checkEmailExist) return res.status(409).send({status:false,message:"This email already exist, enter another email"})
 }
 
-if (phone){
+if (phone ||(phone=="")){
 
     if (!validateMobile.test(phone)) return res.status(400).send({ status: false, message: "plz enter valid Indian mobile number" });
     let checkPhoneExist = await userModel.findOne({phone})
     if(checkPhoneExist) return res.status(409).send({status:false,message:"This phone no. already exist, enter new number"})
 }
 
-if (password) {
+if (password ||(password=="")) {
 
     if (password.length > 15 || password.length < 8)return res.status(400).send({
         status: false,
@@ -239,13 +243,22 @@ if (password) {
 
 
   
-if(address){
+if(address ){
+    
     var newAddress = JSON.parse(address)
-    if((Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
-      let {shipping,billing} = newAddress
+    // console.log(newAddress);
+    if((Object.keys(newAddress).length===0)) return res.status(400).send({status:false,message:"Address is required"})
+      let {shipping,billing,...rest} = newAddress
+      if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields[shipping,billing]in address"})
+    
+
 
 
     if(shipping){
+        let {street,city,pincode,...rest} = shipping
+        if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields[street,city,pincode] in shipping"})
+   
+
 
         if( (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
         if(shipping.street){
@@ -266,6 +279,9 @@ if(address){
 
 
     if(billing){
+        let {street,city,pincode,...rest} = billing
+        if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields[street,city,pincode] in billing"})
+   
 
         if( (Object.keys(billing).length===0)) return res.status(400).send({status:false,message:"Billing address is required"})
         if(billing.street){
