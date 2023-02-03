@@ -11,7 +11,8 @@ const userModel = require("../models/userModel");
 
 const verifyToken = async (req,res,next)=>{
 
-    let token = req.headers["authorization"]
+    try {
+        let token = req.headers["authorization"]
     if(!token) return res.status(400).send({status:false,message:"Token is mandatory"})
     token = token.slice(7, token.length)
     
@@ -28,21 +29,30 @@ const verifyToken = async (req,res,next)=>{
     }else{
         return res.status(401).send({status:false,msg:"you are not authenticated"})
     }
+    } catch (error) {
+        res.status(500).send({status:false,message:error.message})
+        console.log("error in verifyToken", error.message)
+    }
    
 }
 
 
 
 const verifyTokenAndAuthorization = async(req,res,next)=>{
-    verifyToken(req,res,async()=>{
-        let userId = req.params.userId;
-      
-        if(req.tokenDetails.userId == userId){
-            next()
-        }else{
-            res.status(403).send({msg:"you are not authorized to perform this task"})
-        }
-    })
+    try {
+        verifyToken(req,res,async()=>{
+            let userId = req.params.userId;
+          
+            if(req.tokenDetails.userId == userId){
+                next()
+            }else{
+                res.status(403).send({msg:"you are not authorized to perform this task"})
+            }
+        })
+    } catch (error) {
+        res.status(500).send({status:false,message:error.message})
+        console.log("error in verifyTokenAndAuthorization", error.message)
+    }
 }
 
 

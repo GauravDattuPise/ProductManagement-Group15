@@ -214,7 +214,7 @@ const updateProduct = async function(req,res){
     
      
    
-  console.log(productImage)
+ 
 
       if(productImage){
         if(productImage.length>0){
