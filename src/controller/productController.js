@@ -1,5 +1,7 @@
 
+const { default: mongoose } = require("mongoose");
 const  validator = require("validator");
+const { default: isBoolean } = require("validator/lib/isboolean");
 const productModel = require("../models/productModel");
 const { uploadFile } = require("./aws");
 
@@ -60,7 +62,7 @@ const createProduct = async(req,res)=>{
     let sizeArr = ["S","XS","M","X", "L","XXL", "XL"]
     
     if(!availableSizes) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
-
+    availableSizes = availableSizes.toUpperCase()
     if(!sizeArr.includes(availableSizes)) return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
 
 
@@ -93,40 +95,79 @@ const createProduct = async(req,res)=>{
 const getProduct = async function(req,res){
   try {
       let data = req.query
+      if(Object.keys(data).length===0) {
+        let findProduct = await productModel.find({isDeleted:false})
+        return res.status(200).send({status:true,message:"Success",data:findProduct})
+      }
    
-      let {size,name,priceLessThan,priceGreaterThan, ...rest}= data
-      if (Object.keys(rest).length > 0) return res.status(400).send({ status: false, message: 'please enter valid filter, userId, category and subcategory' });
-     
+      let {size,name,priceLessThan,priceGreaterThan,priceSort, ...rest}= data
+      if (Object.keys(rest).length > 0) return res.status(400).send({ status: false, message: 'please enter valid filter, [ size, name, priceLessThan, priceGreaterThan, priceSort]' });
+  
 
       let filter = {
         isDeleted:false
       }
 
-      if(size ){
+      if(size){
+        let sizeArr = ["S", "XS", "M", "X", "L", "XXL", "XL"]
+        size = size.trim().toUpperCase()
+        if(!sizeArr.includes(size)) return res.status(400).send({ status: false, message: ` ${size} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
         filter.availableSizes=size
       }
 
-      if(priceLessThan){
-        filter.price = priceLessThan
+
+      if(name){
+        name = name.trim()
+        if(!validator.isAlpha(name.split(" ").join(""))) return res.status(400).send({status:false,message:"type of name must be string"})
+        // let findByTitle = await productModel.find()
+        // var filterTitle = findByTitle.filter((x)=>{
+        //   return x.title.includes(name)
+        // })
+        
+        filter.title= {$regex: name }
+      }
+
+      if(priceLessThan && priceGreaterThan){
+
+        priceLessThan = priceLessThan.trim()
+        priceGreaterThan = priceGreaterThan.trim()
+
+        if(typeof(priceLessThan && priceGreaterThan) != "number" ) return res.status(400).send({status:false,message:"sorting price [priceLessThan, priceLessThan] type must be number"})
+        filter.price = {$gte : priceGreaterThan, $lte:priceLessThan}
+
+      } else if(priceLessThan){
+
+        priceLessThan = priceLessThan.trim()
+        if(typeof(priceLessThan) != "number" ) return res.status(400).send({status:false,message:" priceLessThan type must be number"})
+        filter.price = {$lte:priceLessThan}
+
+      }else if(priceGreaterThan){
+
+        priceGreaterThan = priceGreaterThan.trim()
+        if(typeof(priceGreaterThan) != "number" ) return res.status(400).send({status:false,message:"priceLessThan type must be number"})
+        filter.price = {$gte:priceGreaterThan}
+
       }
       
-      // if(name){
-      //   let findByTitle = await productModel.find()
-      //   let filterTitle = findByTitle.filter((x)=>{
-      //     return x.title.includes(name)
-      //   })
-        
-      //   filter.title=filterTitle
+      if(priceSort){
+        priceSort = priceSort.trim()
+        if(priceSort != "-1" || priceSort != "1")  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
+      } 
+
+      // if(!priceSort) priceSort = 1
+      
+      let findProduct = await productModel.find(filter).sort({price:priceSort})
+
+      if(findProduct.length===0) return res.status(404).send({status:false,message:"Product not found"})
+      
+      // if(filterTitle){
+      //   return res.send({data:filterTitle})
+
+      // }else{
+      //  return res.send({data:findProduct})
       // }
-
-      // console.log(filter)
-
-    let findProduct = await productModel.find({price:{$gt:priceLessThan}})
-
-
-
-      // let savedData = await productModel.find(data)
-      return res.status(200).send({status:false,message:"success",data:findProduct})
+   
+      return res.status(200).send({status:true,message:"Success", data:findProduct})
   } catch (error) {
       res.status(500).send({status:false,message:error.message})
       console.log(error.message);
@@ -137,6 +178,155 @@ const getProduct = async function(req,res){
 
 
 
+const getProductByID = async function(req,res){
+  try {
+      let productId = req.params.productId
+
+      if(!mongoose.isValidObjectId(productId)) return res.status(400).send({status:false,message:"product id invaild"})
+
+      let checkProduct = await productModel.findOne({_id:productId,isDeleted:false})
+
+      if(!checkProduct) return res.status(404).send({status:false,message:"product not found"})
+
+      return res.status(200).send({status:true,message:"Success",data:checkProduct})
+
+  } catch (error) {
+
+      res.status(500).send({status:false,message:error.message})
+
+      console.log("error in getProductById",error.mesage);
+  }
+
+}
 
 
-module.exports = {createProduct,getProduct}
+const updateProduct = async function(req,res){
+  try {
+      let productId = req.params.productId
+  
+     
+      if(!mongoose.isValidObjectId(productId)) return res.status(400).send({status:false,message:"product id invaild"})
+
+      
+
+      let data = req.body
+      let productImage = req.files
+    
+     
+   
+  
+
+      if(productImage){
+        if(productImage.length>0){
+
+          if(productImage[0].fieldname != "productImage"){
+            return res.send({status:false,message:"invalid image key, use [ productImage ] as key"})
+        }
+        }
+        
+      }
+    
+      
+      if(Object.keys(data).length === 0 ) {
+        
+
+        return res.status(400).send({status:false,message:"Pls send some data to update"})
+
+      }
+      
+      let {title,description,price,isFreeShipping,style,availableSizes,installments,...rest} = data
+
+      if(Object.keys(rest).length > 0) return res.status(400).send({staus:false,message:"pls provide valid fields"})
+
+      if(title){
+         title = title.replace(/\s+/g, ' ').trim()
+         if(!validateTitle.test(title)) return res.status(400).send({staus:false,message:"Given title is invalid"})
+          checkTitle = await productModel.findOne({title:title,isDeleted:false})
+          if(checkTitle) return res.status(400).send({staus:false,message:"This title already exist ,pls provide another title"})
+      }
+
+      if(description){ 
+         description = description.replace(/\s+/g, ' ').trim()
+         if(!validateTitle.test(description)) return res.status(400).send({staus:false,message:"Given description is invalid"})
+      }
+
+    
+      if(price){ 
+        price = price.replace(/\s+/g, '').trim()
+      
+         if(!validator.isNumeric(price)) return res.status(400).send({staus:false,message:"Given price is invalid, price should be number"})
+      }
+
+      if(isFreeShipping){
+      
+        isFreeShipping = isFreeShipping.trim().toLowerCase()
+       
+        if(!validator.isBoolean(isFreeShipping))  return res.status(400).send({status:false,message:"isFreeShipping value must be true or false"})
+
+      } 
+
+      
+
+      let uploadedFileURL;
+      if(productImage.length>0) {
+        // if(productImage.length===0) return res.status(400).send({status:false,message:"profileImaje is mandatory"})
+        let urlType = productImage[0].originalname;
+        if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
+        if (productImage.length > 0) {
+          uploadedFileURL = await uploadFile(productImage[0]);
+        } 
+
+        if(!uploadedFileURL) return res.status(400).send({status:false, message: "No file found" });
+      }
+
+
+      if(style){
+        style = style.replace(/\s+/g, ' ').trim()
+        if(!validateTitle.test(style)) return res.status(400).send({status:false,message:"Invalid style details, style be in alphabates"})
+
+    }
+    
+    // let sizeArr = ["S","XS","M","X", "L","XXL", "XL"]
+    
+    // if(!availableSizes) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
+
+    // if(!sizeArr.includes(availableSizes)) return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+
+
+
+    // if(installments){
+       
+    //     if(!validator.isNumeric(installments)) return res.status(400).send({status:false, message: "Invalid Installment / installment must be greater than 0" });
+    // }
+
+
+      let updateProductData ={title,description,price,isFreeShipping,productImage:uploadedFileURL,style,availableSizes,installments}
+
+
+      let updatedData = await productModel.findOneAndUpdate({_id:productId,isDeleted:false},updateProductData,{new:true})
+      if(!updatedData)  return res.status(400).send({staus:false,message:"NO Product Found"})
+      return res.status(200).send({status:true,message:"Success",data:updatedData})
+
+
+  } catch (error) {
+      res.status(500).send({status:false,message:error.message})
+      console.log(error.mesage);
+  }
+}
+
+
+
+const deleteProduct = async function(req,res){
+  let data = req.params.productId
+
+  if(!mongoose.isValidObjectId(data)) return res.status(400).send({status:false,message:"product id invaild"})
+
+  let checkProduct = await productModel.findOneAndUpdate({_id:data,isDeleted:false},{$set:{isDeleted:true,deletedAt:Date.now()}},{new:true})
+
+  if(!checkProduct) return res.status(404).send({status:false,message:"product not found or already deleted"})
+
+  return res.status(200).send({status:true,message:"Success",data:checkProduct})
+}
+
+
+module.exports = {createProduct,getProduct, getProductByID,updateProduct,deleteProduct }

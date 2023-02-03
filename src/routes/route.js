@@ -1,6 +1,6 @@
 
 const express = require("express")
-const { createProduct,getProduct } = require("../controller/productController")
+const { createProduct,getProduct, getProductByID, updateProduct, deleteProduct } = require("../controller/productController")
 const { createUser, loginUser,getUser,updateUser } = require("../controller/userController")
 
 const route = express.Router()
@@ -18,7 +18,9 @@ route.get("/user/:userId/profile", verifyToken, getUser)
 route.put("/user/:userId/profile", verifyTokenAndAuthorization, updateUser)
 route.post("/products",createProduct)
 route.get("/products",getProduct)
-// route.get("/products/:productId",getProductById)
+route.get("/products/:productId",getProductByID)
+route.put("/products/:productId",updateProduct)
+route.delete("/products/:productId",deleteProduct)
 
 
 
