@@ -214,7 +214,7 @@ const updateProduct = async function(req,res){
     
      
    
-  
+  console.log(productImage)
 
       if(productImage){
         if(productImage.length>0){
@@ -227,7 +227,7 @@ const updateProduct = async function(req,res){
       }
     
       
-      if(Object.keys(data).length === 0 ) {
+      if(Object.keys(data).length === 0 && typeof productImage == "undefined" ) {
         
 
         return res.status(400).send({status:false,message:"Pls send some data to update"})
