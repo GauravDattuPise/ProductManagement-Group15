@@ -17,7 +17,9 @@ const createProduct = async(req,res)=>{
 
     let {title,description,price,currencyId,currencyFormat,availableSizes,installments} = data
 
-
+      // let sizeArr1 = [...availableSizes]
+      console.log(availableSizes)
+      // console.log(sizeArr1)
     let findProductbyTitle = await productModel.findOne({ title: title });
     if (findProductbyTitle)return res.status(409).send({ status: false, message: "title is already exist" });
 
@@ -61,9 +63,13 @@ const createProduct = async(req,res)=>{
     
     let sizeArr = ["S","XS","M","X", "L","XXL", "XL"]
     
+
     if(!availableSizes) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
-    availableSizes = availableSizes.toUpperCase()
-    if(!sizeArr.includes(availableSizes)) return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+    
+    availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
+    for(let i=0;i<availableSizes.length;i++){
+      if(!sizeArr.includes(availableSizes[i]))return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+    }
 
 
 
@@ -72,7 +78,7 @@ const createProduct = async(req,res)=>{
         if(!validator.isNumeric(installments)) return res.status(400).send({status:false, message: "Invalid Installment / installment must be greater than 0" });
     }
 
-
+  
 
     let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes,installments}
 
@@ -132,26 +138,26 @@ const getProduct = async function(req,res){
         priceLessThan = priceLessThan.trim()
         priceGreaterThan = priceGreaterThan.trim()
 
-        if(typeof(priceLessThan && priceGreaterThan) != "number" ) return res.status(400).send({status:false,message:"sorting price [priceLessThan, priceLessThan] type must be number"})
+        if(!validator.isNumeric(priceLessThan) || !validator.isNumeric(priceGreaterThan)) return res.status(400).send({status:false,message:"sorting price [priceLessThan, priceLessThan] type must be number"})
         filter.price = {$gte : priceGreaterThan, $lte:priceLessThan}
 
       } else if(priceLessThan){
 
         priceLessThan = priceLessThan.trim()
-        if(typeof(priceLessThan) != "number" ) return res.status(400).send({status:false,message:" priceLessThan type must be number"})
+        if(!validator.isNumeric(priceLessThan)) return res.status(400).send({status:false,message:" priceLessThan type must be number"})
         filter.price = {$lte:priceLessThan}
 
       }else if(priceGreaterThan){
 
         priceGreaterThan = priceGreaterThan.trim()
-        if(typeof(priceGreaterThan) != "number" ) return res.status(400).send({status:false,message:"priceLessThan type must be number"})
+        if(!validator.isNumeric(priceGreaterThan) ) return res.status(400).send({status:false,message:"priceLessThan type must be number"})
         filter.price = {$gte:priceGreaterThan}
 
       }
       
       if(priceSort){
         priceSort = priceSort.trim()
-        if(priceSort != "-1" || priceSort != "1")  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
+        if (priceSort != 1 && priceSort != - 1)  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
       } 
 
       // if(!priceSort) priceSort = 1
@@ -285,25 +291,31 @@ const updateProduct = async function(req,res){
         if(!validateTitle.test(style)) return res.status(400).send({status:false,message:"Invalid style details, style be in alphabates"})
 
     }
+
+
     
-    // let sizeArr = ["S","XS","M","X", "L","XXL", "XL"]
-    
-    // if(!availableSizes) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
-
-    // if(!sizeArr.includes(availableSizes)) return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
-
-
-
-    // if(installments){
-       
-    //     if(!validator.isNumeric(installments)) return res.status(400).send({status:false, message: "Invalid Installment / installment must be greater than 0" });
-    // }
+    if(availableSizes){
+      let sizeArr = ["S", "XS", "M", "X", "L", "XXL", "XL"]
+      availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
+      for(let i=0;i<availableSizes.length;i++){
+        if(!sizeArr.includes(availableSizes[i]))return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+      }
+      // if(!sizeArr.includes(availableSizes)) return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+      console.log(availableSizes)
+    }
 
 
+
+    if(installments){
+      installments = installments.replace(/\s+/g, ' ').trim()
+        if(!validator.isNumeric(installments)) return res.status(400).send({status:false, message: "Invalid Installment / installment must be greater than 0" });
+    }
+
+ 
       let updateProductData ={title,description,price,isFreeShipping,productImage:uploadedFileURL,style,availableSizes,installments}
 
 
-      let updatedData = await productModel.findOneAndUpdate({_id:productId,isDeleted:false},updateProductData,{new:true})
+   let updatedData = await productModel.findOneAndUpdate({_id:productId,isDeleted:false},updateProductData,{new:true})
       if(!updatedData)  return res.status(400).send({staus:false,message:"NO Product Found"})
       return res.status(200).send({status:true,message:"Success",data:updatedData})
 

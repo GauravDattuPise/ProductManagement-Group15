@@ -57,8 +57,9 @@ if (password.length > 15 || password.length < 8)return res.status(400).send({
   
   
   
-  if(!address || (Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
-  let newAddress = JSON.parse(address)
+if(!address || (Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
+let newAddress = JSON.parse(address)
+// console.log(newAddress)
   let {shipping,billing} = newAddress
 
 if(!shipping || (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
@@ -170,7 +171,7 @@ const getUser = async (req, res) => {
       if (userId != req.tokenDetails.userId) return res.status(401).send({ status: false, message: "This userId is not authenticate" });
       
       let getUser = await userModel.findOne({ _id: userId });
-        console.log(getUser);
+     
       return res.status(200).send({ status: true, message: "User profile details", data: getUser });
 
     } catch (err) {
@@ -192,7 +193,7 @@ const updateUser = async(req,res)=>{
     let {fname,lname,email,phone,password,address,...rest} = data
 
     // if(rest) return res.send("hii")
-    if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields like[fname,lname,email,phone,password,address] to update user details"})
+    if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields like[fname,lname,email,phone,password,address, profilImage] to update user details"})
    
 
 
@@ -233,11 +234,11 @@ if (password ||(password=="")) {
         mesage: "password must be greater than 8 char and less than 15 char",
       });
 
-      if (!validator.isStrongPassword(password)) return res.status(400).send({
-          status: false,
-          message:
-            "plz enter strong password, must contain 1 Uppercase,1 Lowercase,1 special-character",
-        });
+    //   if (!validator.isStrongPassword(password)) return res.status(400).send({
+    //       status: false,
+    //       message:
+    //         "plz enter strong password, must contain 1 Uppercase,1 Lowercase,1 special-character",
+    //     });
 
         var bcryptPass = await bcrypt.hash(password, 10)
 }
@@ -253,7 +254,7 @@ if(address ){
     
     var newAddress = JSON.parse(address)
    
-    console.log(newAddress);
+
     if((Object.keys(newAddress).length===0)) return res.status(400).send({status:false,message:"Address is required"})
       let {shipping,billing,...rest} = newAddress
       if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields[shipping,billing]in address"})
