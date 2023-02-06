@@ -11,19 +11,23 @@ const createCart = async(req,res)=>{
     
     let [{productId,quantity}] = items
 
+    userId = userId1
+
     let checkProduct = await productModel.findOne({_id:productId,isDeleted:false})
     if(!checkProduct) return res.status(404).send({status:false,message:"no product found"})
+    console.log(checkProduct)
 
     let checkUser = await userModel.findOne({_id:userId})
     if(!checkUser) return res.status(404).send({status:false,message:"no user found"})
 
+    let price = checkProduct.price
 
     // checking if user has cart or not
     let checkuserHasCart = await cartModels.findOne({userId:userId})
    
- 
+   
     let cartData = {
-        userId,items,totalItems,totalPrice:1
+        userId,items,totalItems:1,totalPrice:price
     }
  
 
@@ -31,7 +35,7 @@ const createCart = async(req,res)=>{
 
     if(!checkuserHasCart) {
         let createCart = await cartModels.create(cartData)
-        cartData.totalItems = checkuserHasCart.items.length
+        cartData.totalPrice = price
         return res.status(201).send({status:true,message:"Success cart",data:createCart})
     }
 
@@ -47,19 +51,24 @@ const createCart = async(req,res)=>{
 
             if (checkProductDublicate){
                 let productAvailable = await cartModels.findOneAndUpdate({"items.productId": productId },{$inc:{'items.$.quantity':1}},{new:true})
-                cartData.totalItems = checkuserHasCart.items.length
-                console.log(totalItems);
+
+                console.log(productAvailable)
+                console.log(price)
+              console.log(  productAvailable.totalPrice + price)
+
+                cartData.totalPrice = price + productAvailable.totalPrice
+                productAvailable.totalPrice =  cartData.totalPrice 
                 return res.status(201).send({status:true,message:"productAvailable",data:productAvailable}) 
             }
 
             if(!checkProductDublicate){
                 let arr = checkuserHasCart.items.concat(items)  
-                console.log(arr)
+             
                 cartData.items=arr
-                // cartData.totalItems = checkuserHasCart.items.length
-                cartData.totalItems = checkuserHasCart.items.length
-                console.log(totalItems);
+                cartData.totalItems = arr.length
+                cartData.totalPrice  = price +  cartData.totalPrice
                 let productAvailable = await cartModels.findOneAndUpdate({_id:cartId},cartData,{new:true})
+             
                 return res.status(201).send({status:true,message:"productAvailable",data:productAvailable})
             }
            
