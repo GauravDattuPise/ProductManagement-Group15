@@ -164,7 +164,7 @@ const getUser = async (req, res) => {
     try {
       let userId = req.params.userId;
 
-      if(!userId) return res.status(400).send({ status: false, message: "You can not access your profile without valid userId" });
+    //   if(!userId) return res.status(400).send({ status: false, message: "You can not access your profile without valid userId" });
 
       if (!mongoose.isValidObjectId(userId)) return res.status(400).send({ status: false, message: "userId is not vaild" });
       

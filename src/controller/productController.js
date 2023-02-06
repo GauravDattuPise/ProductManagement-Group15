@@ -20,12 +20,13 @@ const createProduct = async(req,res)=>{
       // let sizeArr1 = [...availableSizes]
       console.log(availableSizes)
       // console.log(sizeArr1)
+      if(!title) return res.status(400).send({ status: false, message: "title is required" })
+      if(!validateTitle.test(title.split(" ").join("")))return res.status(400).send({ status: false, message: "plz enter valid title" });
+
     let findProductbyTitle = await productModel.findOne({ title: title });
     if (findProductbyTitle)return res.status(409).send({ status: false, message: "title is already exist" });
 
 
-    if(!title) return res.status(400).send({ status: false, message: "title is required" })
-    if(!validateTitle.test(title.split(" ").join("")))return res.status(400).send({ status: false, message: "plz enter valid title" });
 
     if (!description)return res.status(400).send({ status: false, message: "description is mandatory" });
     if (!validateTitle.test(description.split(" ").join("")))return res.status(400).send({ status: false, message: "plz enter valid description" });
@@ -45,7 +46,7 @@ const createProduct = async(req,res)=>{
  
 
     let productImage = req.files
-    if(productImage.length===0) return res.status(400).send({status:false,message:"profileImaje is mandatory"})
+    if(productImage.length===0) return res.status(400).send({status:false,message:"productImage is mandatory"})
     
     let urlType = productImage[0].originalname;
     if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
@@ -103,6 +104,7 @@ const getProduct = async function(req,res){
       let data = req.query
       if(Object.keys(data).length===0) {
         let findProduct = await productModel.find({isDeleted:false})
+        if(findProduct.length===0) return res.status(404).send({status:false,message:"products not found"})
         return res.status(200).send({status:true,message:"Success",data:findProduct})
       }
    
@@ -316,7 +318,7 @@ const updateProduct = async function(req,res){
 
 
    let updatedData = await productModel.findOneAndUpdate({_id:productId,isDeleted:false},updateProductData,{new:true})
-      if(!updatedData)  return res.status(400).send({staus:false,message:"NO Product Found"})
+      if(!updatedData)  return res.status(404).send({staus:false,message:"No Product Found"})
       return res.status(200).send({status:true,message:"Success",data:updatedData})
 
 
