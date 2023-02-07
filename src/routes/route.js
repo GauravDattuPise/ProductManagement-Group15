@@ -1,6 +1,6 @@
 
 const express = require("express")
-const { createCart } = require("../controller/cartController")
+const { createCart, updateCart } = require("../controller/cartController")
 const { createProduct,getProduct, getProductByID, updateProduct, deleteProduct } = require("../controller/productController")
 const { createUser, loginUser,getUser,updateUser } = require("../controller/userController")
 
@@ -23,6 +23,8 @@ route.get("/products/:productId",getProductByID)
 route.put("/products/:productId",updateProduct)
 route.delete("/products/:productId",deleteProduct)
 route.post("/users/:userId/cart",createCart )
+route.put("/users/:userId/cart",updateCart )
+
 
 
 
