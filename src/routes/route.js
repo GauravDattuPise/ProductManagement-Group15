@@ -5,10 +5,10 @@ const { createProduct,getProduct, getProductByID, updateProduct, deleteProduct }
 const { createUser, loginUser,getUser,updateUser } = require("../controller/userController")
 const { createOrder,updateOrder} = require("../controller/orderController")
 const route = express.Router()
-// const { registerUser,loginUser } = require("../Controller/userController")
-// const { createBook,getBooks,getBookById,updateBookById,deleteBookById } = require("../Controller/bookController.js")
+
+
 const { verifyToken,verifyTokenAndAuthorization} = require("../Middleware/auth.js")
-// const { createReview,reviewUpdate,reviewDelete } = require("../Controller/reviewController")
+
 
 
 
@@ -29,8 +29,8 @@ route.put("/users/:userId/cart",verifyTokenAndAuthorization,updateCart )
 route.get("/users/:userId/cart",verifyTokenAndAuthorization,getCart )
 route.delete("/users/:userId/cart",verifyTokenAndAuthorization,deleteCart )
 
-route.post("/users/:userId/orders",createOrder)
-route.put("/users/:userId/orders",updateOrder)
+route.post("/users/:userId/orders",verifyTokenAndAuthorization,createOrder)
+route.put("/users/:userId/orders",verifyTokenAndAuthorization,updateOrder)
 
 
 

@@ -43,21 +43,13 @@ if(checkPhoneExist) return res.status(409).send({status:false,message:"This phon
 
 if (!password) return res.status(400).send({ status: false, message: "password is mandatory" });
 
-// console.log(password.trim());
-// if (password.length > 15 || password.length < 8)return res.status(400).send({
-//     status: false,
-//     mesage: "password must be greater than 8 char and less than 15 char",
-//   });
+
 if(!(/^(?=.*[a-z0-9])[a-zA-Z0-9!@#$%^&*]{8,15}$/).test(password))return res.status(400).send({
  status: false,  mesage: "password must be greater than 8 char and less than 15 char",
        });
 
 
-// if (!validator.isStrongPassword(password)) return res.status(400).send({
-//     status: false,
-//     message:
-//       "plz enter strong password, must contain 1 Uppercase,1 Lowercase,1 special-character",
-//   });
+
 
 
   
@@ -65,7 +57,7 @@ if(!(/^(?=.*[a-z0-9])[a-zA-Z0-9!@#$%^&*]{8,15}$/).test(password))return res.stat
   
 if(!address || (Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
 let newAddress = JSON.parse(address)
-// console.log(newAddress)
+
   let {shipping,billing} = newAddress
 
 if(!shipping || (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
@@ -170,7 +162,7 @@ const getUser = async (req, res) => {
     try {
       let userId = req.params.userId;
 
-    //   if(!userId) return res.status(400).send({ status: false, message: "You can not access your profile without valid userId" });
+   
 
       if (!mongoose.isValidObjectId(userId)) return res.status(400).send({ status: false, message: "userId is not vaild" });
       
@@ -198,7 +190,7 @@ const updateUser = async(req,res)=>{
 
     let {fname,lname,email,phone,password,address,...rest} = data
 
-    // if(rest) return res.send("hii")
+ 
     if (Object.keys(rest).length > 0) return res.status(400).send({ status: false,message:"pls use valid fields like[fname,lname,email,phone,password,address, profilImage] to update user details"})
    
 
@@ -240,11 +232,7 @@ if (password ||(password=="")) {
         mesage: "password must be greater than 8 char and less than 15 char",
       });
 
-    //   if (!validator.isStrongPassword(password)) return res.status(400).send({
-    //       status: false,
-    //       message:
-    //         "plz enter strong password, must contain 1 Uppercase,1 Lowercase,1 special-character",
-    //     });
+   
 
         var bcryptPass = await bcrypt.hash(password, 10)
 }
@@ -295,7 +283,7 @@ if(address ){
         
     }
 
-    // let validateTitle = /^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/;
+  
 
     if(billing){
         if( (Object.keys(billing).length===0)) return res.status(400).send({status:false,message:"Billing address is required"})
@@ -342,7 +330,7 @@ if(imageUrl.length>0){
     if(!uploadedFileURL) return res.status(400).send({ msg: "No file found" });
 }
 
-// if(imageUrl.length===0) return res.status(400).send({status:false,message:"profile Imaje is mandatory"})
+
     
    
 

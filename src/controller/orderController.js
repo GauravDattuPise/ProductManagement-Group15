@@ -2,14 +2,6 @@
 
 
 
-// ### POST /users/:userId/orders
-// - Create an order for the user
-// - Make sure the userId in params and in JWT token match.
-// - Make sure the user exist
-// - Get cart details in the request body
-
-//get cart details from userID.
-//
 
 const cartModels = require("../models/cartModels")
 const orderModel = require("../models/orderModel")
@@ -19,7 +11,7 @@ const createOrder = async function(req,res){
     try {
         let data = req.body
         let userId = req.params.userId
-        if(Object.keys(data).length===0) return res.status(400).send({status:false,message:"pls send cartId"})
+        if(Object.keys(data).length===0) return res.status(400).send({status:false,message:"pls send some data for creating order ,[cartId] cancellable is optional ]"})
         let{cartId, cancellable,...rest} = data
         if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"pls send valid fields"})
         if(cancellable){
@@ -58,7 +50,7 @@ const updateOrder = async(req,res)=>{
     let userId = req.params.userId
     let {orderId,status,...rest} = data
 
-    if(Object.keys(data).length===0) return res.status(400).send({status:false,message:"pls send cartId"})
+    if(Object.keys(data).length===0) return res.status(400).send({status:false,message:"pls send data to update order"})
 
     if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"pls send valid fields"})
     
@@ -70,9 +62,7 @@ const updateOrder = async(req,res)=>{
     if(status == "pending" ) return res.status(400).send({status:false,message:"order status is default pending, you cannot set maually to 'pending', Use [ completed, cancelled] "})
     if(!["completed", "cancelled"].includes(status)) return res.status(400).send({status:false,message:"send valid status, [ completed, cancelled]"})
     let checkCancel = checkOrder.cancellable
-    let updateDoc = {
-
-    }
+   
 
     if(checkOrder.status == "cancelled" ) return res.status(400).send({status:false,message:"Given order already cancelled"})
     if(checkOrder.status == "completed" ) return res.status(400).send({status:false,message:"Given order has been completed, You cannot update this order"})

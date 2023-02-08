@@ -64,9 +64,9 @@ const createCart = async(req,res)=>{
             /// CHECKING THE CART HAS SAME PRODUCT, IF IT DOES INCREASING ITS QUANTITY AND TOTAL PRICE
 
 
-            let checkProductDublicate = await cartModels.findOne({"items.productId": productId, userId:userId })
+            let checkProductDuplicate = await cartModels.findOne({"items.productId": productId, userId:userId })
 
-            if (checkProductDublicate){
+            if (checkProductDuplicate){
                 let productAvailable = await cartModels.findOneAndUpdate({"items.productId": productId },{$inc:{'items.$.quantity':1,totalPrice:cartData.totalPrice+price}},{new:true}).select({__v:0,'items._id':0})
 
                 return res.status(201).send({status:true,message:"productAvailable",data:productAvailable})
@@ -74,7 +74,7 @@ const createCart = async(req,res)=>{
 
             // IF PRODUCT IS NEW, THEN IT WILL ADDED TO ITEMS ARRAY AND INCREASING TOTAL ITEMS, ALSO INCREASING ITEMS
 
-            if(!checkProductDublicate){
+            if(!checkProductDuplicate){
                 let arr = checkuserHasCart.items.concat(items)
 
                 cartId = checkuserHasCart._id.toString()
@@ -126,8 +126,7 @@ const updateCart = async function (req, res) {
 
      let findCart = await cartModels.findOne({ _id: cartId})
    
-    //   let totalPrice = findCart.totalPrice
-    //  let price = findProduct.price
+  
 
      if(!findCart) return res.status(404).send({ status: false, message: "cart not found" })
 

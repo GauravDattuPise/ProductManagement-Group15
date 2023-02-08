@@ -20,9 +20,7 @@ const createProduct = async(req,res)=>{
 
     let {title,description,price,currencyId,currencyFormat,availableSizes,installments} = data
 
-      // let sizeArr1 = [...availableSizes]
-      console.log(availableSizes)
-      // console.log(sizeArr1)
+     
       if(!title) return res.status(400).send({ status: false, message: "title is required" })
       if(!validateTitle.test(title.split(" ").join("")))return res.status(400).send({ status: false, message: "plz enter valid title" });
 
@@ -70,20 +68,17 @@ const createProduct = async(req,res)=>{
     
     if(availableSizes.length < 1) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
 
+    
     availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
-    let newSize = []
+    availableSizes = [...new Set(availableSizes)];
+
+   
     for(let i=0; i<availableSizes.length; i++){
-      if(!newSize.includes(availableSizes[i])){
-        newSize.push(availableSizes[i])
+      if(!sizeArr.includes(availableSizes[i])){
+        return res.status(400).send({ status: false, message: ` ${availableSizes[i]} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
       }
     }
-    // console.log(availableSizes);
-    // console.log(newSize);
-    for(let i=0;i<newSize.length;i++){
-      if(!sizeArr.includes(newSize[i]))return res.status(400).send({ status: false, message: ` ${newSize[i]} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
-    }
-    // availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
-    // let duplicateSize = availableSizes.filter((item, index) => availableSizes.indexOf(item) !== index)
+   
     
 
 
@@ -93,7 +88,7 @@ const createProduct = async(req,res)=>{
     }
     
 
-    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes:newSize,installments}
+    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes,installments}
 
     let createProduct = await productModel.create(productDetails)
 
@@ -139,10 +134,7 @@ const getProduct = async function(req,res){
       if(name){
         name = name.trim()
         if(!validator.isAlpha(name.split(" ").join(""))) return res.status(400).send({status:false,message:"type of name must be string"})
-        // let findByTitle = await productModel.find()
-        // var filterTitle = findByTitle.filter((x)=>{
-        //   return x.title.includes(name)
-        // })
+       
         
         filter.title= {$regex: name }
       }
@@ -174,18 +166,13 @@ const getProduct = async function(req,res){
         if (priceSort != 1 && priceSort != - 1)  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
       } 
 
-      // if(!priceSort) priceSort = 1
+     
       
       let findProduct = await productModel.find(filter).sort({price:priceSort})
 
       if(findProduct.length===0) return res.status(404).send({status:false,message:"Product not found"})
       
-      // if(filterTitle){
-      //   return res.send({data:filterTitle})
-
-      // }else{
-      //  return res.send({data:findProduct})
-      // }
+     
    
       return res.status(200).send({status:true,message:"Success", data:findProduct})
   } catch (error) {
@@ -289,7 +276,7 @@ const updateProduct = async function(req,res){
 
       let uploadedFileURL;
       if(productImage.length>0) {
-        // if(productImage.length===0) return res.status(400).send({status:false,message:"profileImaje is mandatory"})
+        
         let urlType = productImage[0].originalname;
         if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
         if (productImage.length > 0) {
@@ -311,25 +298,16 @@ const updateProduct = async function(req,res){
     if(availableSizes){
       let sizeArr = ["S", "XS", "M", "X", "L", "XXL", "XL"]
       availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
-      // let c = availableSizes.trim().toUpperCase()
-      // console.log(c);
-      // let b = c.split(",")
-      console.log(availableSizes);
-      var newSize = []
+      availableSizes = [...new Set(availableSizes)];
+      
+
+
       for(let i=0; i<availableSizes.length; i++){
-        if(!newSize.includes(availableSizes[i])){
-          newSize.push(availableSizes[i])
+        if(!sizeArr.includes(availableSizes[i])){
+          return res.status(400).send({ status: false, message: ` ${availableSizes[i]} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
         }
       }
-      // console.log(availableSizes);
-      // console.log(newSize);
-      for(let i=0;i<newSize.length;i++){
-        if(!sizeArr.includes(newSize[i]))return res.status(400).send({ status: false, message: ` ${newSize[i]} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
-      }
-      // for(let i=0;i<availableSizes.length;i++){
-      //   if(!sizeArr.includes(availableSizes[i]))return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
-      // }
-      // if(!sizeArr.includes(availableSizes)) return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+      
       
     }
 
@@ -341,7 +319,7 @@ const updateProduct = async function(req,res){
     }
 
  
-      let updateProductData ={title,description,price,isFreeShipping,productImage:uploadedFileURL,style,availableSizes:newSize,installments}
+      let updateProductData ={title,description,price,isFreeShipping,productImage:uploadedFileURL,style,availableSizes,installments}
 
 
    let updatedData = await productModel.findOneAndUpdate({_id:productId,isDeleted:false},updateProductData,{new:true})
