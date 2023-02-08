@@ -67,26 +67,33 @@ const createProduct = async(req,res)=>{
     
     let sizeArr = ["S","XS","M","X", "L","XXL", "XL"]
     
-
+    
     if(availableSizes.length < 1) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
-    console.log(availableSizes.length);
-    availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
-    let duplicateSize = availableSizes.filter((item, index) => availableSizes.indexOf(item) !== index)
-    console.log(duplicateSize);
-    for(let i=0;i<duplicateSize.length;i++){
-      if(!sizeArr.includes(duplicateSize[i]))return res.status(400).send({ status: false, message: ` ${duplicateSize} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
-    }
 
+    availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
+    let newSize = []
+    for(let i=0; i<availableSizes.length; i++){
+      if(!newSize.includes(availableSizes[i])){
+        newSize.push(availableSizes[i])
+      }
+    }
+    // console.log(availableSizes);
+    // console.log(newSize);
+    for(let i=0;i<newSize.length;i++){
+      if(!sizeArr.includes(newSize[i]))return res.status(400).send({ status: false, message: ` ${newSize[i]} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+    }
+    // availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
+    // let duplicateSize = availableSizes.filter((item, index) => availableSizes.indexOf(item) !== index)
+    
 
 
     if(installments){
        
         if(!validator.isNumeric(installments)) return res.status(400).send({status:false, message: "Invalid Installment / installment must be greater than 0" });
     }
+    
 
-  
-
-    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes:duplicateSize,installments}
+    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes:newSize,installments}
 
     let createProduct = await productModel.create(productDetails)
 
@@ -304,11 +311,26 @@ const updateProduct = async function(req,res){
     if(availableSizes){
       let sizeArr = ["S", "XS", "M", "X", "L", "XXL", "XL"]
       availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
-      for(let i=0;i<availableSizes.length;i++){
-        if(!sizeArr.includes(availableSizes[i]))return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+      // let c = availableSizes.trim().toUpperCase()
+      // console.log(c);
+      // let b = c.split(",")
+      console.log(availableSizes);
+      var newSize = []
+      for(let i=0; i<availableSizes.length; i++){
+        if(!newSize.includes(availableSizes[i])){
+          newSize.push(availableSizes[i])
+        }
       }
+      // console.log(availableSizes);
+      // console.log(newSize);
+      for(let i=0;i<newSize.length;i++){
+        if(!sizeArr.includes(newSize[i]))return res.status(400).send({ status: false, message: ` ${newSize[i]} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+      }
+      // for(let i=0;i<availableSizes.length;i++){
+      //   if(!sizeArr.includes(availableSizes[i]))return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+      // }
       // if(!sizeArr.includes(availableSizes)) return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
-      console.log(availableSizes)
+      
     }
 
 
@@ -319,7 +341,7 @@ const updateProduct = async function(req,res){
     }
 
  
-      let updateProductData ={title,description,price,isFreeShipping,productImage:uploadedFileURL,style,availableSizes,installments}
+      let updateProductData ={title,description,price,isFreeShipping,productImage:uploadedFileURL,style,availableSizes:newSize,installments}
 
 
    let updatedData = await productModel.findOneAndUpdate({_id:productId,isDeleted:false},updateProductData,{new:true})
