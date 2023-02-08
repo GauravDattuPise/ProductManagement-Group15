@@ -42,7 +42,8 @@ const verifyTokenAndAuthorization = async(req,res,next)=>{
     try {
         verifyToken(req,res,async()=>{
             let userId = req.params.userId;
-          
+            let findUser = await userModel.findOne({_id:userId})
+            if(!findUser) return res.status(404).send({status:false,message:"User not found"})
             if(req.tokenDetails.userId == userId){
                 next()
             }else{

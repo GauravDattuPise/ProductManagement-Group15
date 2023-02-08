@@ -125,12 +125,12 @@ const updateCart = async function (req, res) {
    if (!mongoose.isValidObjectId(cartId)) return res.status(400).send({ status: false, message: "cartId id is invalid" })
 
      let findCart = await cartModels.findOne({ _id: cartId})
-     console.log(findCart)
-      let totalPrice = findCart.totalPrice
-     let price = findProduct.price
+   
+    //   let totalPrice = findCart.totalPrice
+    //  let price = findProduct.price
 
      if(!findCart) return res.status(404).send({ status: false, message: "cart not found" })
-      console.log(findCart)
+
      let findProductInCart = findCart.items.filter((x)=>{
        return x.productId.toString() == productId
 

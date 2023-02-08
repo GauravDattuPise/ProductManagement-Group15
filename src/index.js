@@ -19,7 +19,7 @@ app.use("/", route)
 
 const dbconnection = async ()=>{
    try {
-   await mongoose.connect("mongodb+srv://Ashish:7SiSkJ8Z0nkx2EWh@cluster0.8dgrxmt.mongodb.net/group02Database",{useNewUrlParser:true})
+    await mongoose.connect("mongodb+srv://Ashish:7SiSkJ8Z0nkx2EWh@cluster0.8dgrxmt.mongodb.net/group02Database",{useNewUrlParser:true})
     console.log("Database connect");
    } catch (error) {
     console.log("error while db connection", error.message);
