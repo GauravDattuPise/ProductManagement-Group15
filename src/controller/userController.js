@@ -42,10 +42,16 @@ let checkPhoneExist = await userModel.findOne({phone})
 if(checkPhoneExist) return res.status(409).send({status:false,message:"This phone no. already exist"})
 
 if (!password) return res.status(400).send({ status: false, message: "password is mandatory" });
-if (password.length > 15 || password.length < 8)return res.status(400).send({
-    status: false,
-    mesage: "password must be greater than 8 char and less than 15 char",
-  });
+
+// console.log(password.trim());
+// if (password.length > 15 || password.length < 8)return res.status(400).send({
+//     status: false,
+//     mesage: "password must be greater than 8 char and less than 15 char",
+//   });
+if(!(/^(?=.*[a-z0-9])[a-zA-Z0-9!@#$%^&*]{8,15}$/).test(password))return res.status(400).send({
+ status: false,  mesage: "password must be greater than 8 char and less than 15 char",
+       });
+
 
 // if (!validator.isStrongPassword(password)) return res.status(400).send({
 //     status: false,

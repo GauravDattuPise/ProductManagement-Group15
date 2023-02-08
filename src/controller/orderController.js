@@ -53,10 +53,15 @@ const createOrder = async function(req,res){
 
 
 const updateOrder = async(req,res)=>{
+ try {
     let data = req.body
     let userId = req.params.userId
     let {orderId,status,...rest} = data
 
+    if(Object.keys(data).length===0) return res.status(400).send({status:false,message:"pls send cartId"})
+
+    if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"pls send valid fields"})
+    
     if(!orderId) return res.status(400).send({status:false,message:"provide orderId for update order"})
     if(!status) return res.status(400).send({status:false,message:"status is required , provide status for update order, [ completed or cancelled]"})
     let checkOrder = await orderModel.findOne({_id:orderId,userId:userId})
@@ -93,6 +98,11 @@ const updateOrder = async(req,res)=>{
 
     return res.status(200).send({status:true,message:"Success", data:updateOrder})
 
+
+ } catch (error) {
+    console.log("error in update Order",error.message);
+    return res.status(500).send({status:false,message:error.message})
+ }
 }
 
 

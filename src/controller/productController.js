@@ -7,6 +7,9 @@ const { uploadFile } = require("./aws");
 
 
 let validateTitle = /^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/;
+
+
+
 const createProduct = async(req,res)=>{
     try {
         let data = req.body
@@ -65,11 +68,13 @@ const createProduct = async(req,res)=>{
     let sizeArr = ["S","XS","M","X", "L","XXL", "XL"]
     
 
-    if(!availableSizes) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
-    
+    if(availableSizes.length < 1) return res.status(400).send({ status: false, message: `availableSizes is mandatory  ["S", "XS","M","X", "L","XXL", "XL"]`});
+    console.log(availableSizes.length);
     availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
-    for(let i=0;i<availableSizes.length;i++){
-      if(!sizeArr.includes(availableSizes[i]))return res.status(400).send({ status: false, message: ` ${availableSizes} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
+    let duplicateSize = availableSizes.filter((item, index) => availableSizes.indexOf(item) !== index)
+    console.log(duplicateSize);
+    for(let i=0;i<duplicateSize.length;i++){
+      if(!sizeArr.includes(duplicateSize[i]))return res.status(400).send({ status: false, message: ` ${duplicateSize} is not availbale, plz select size from this -> ["S", "XS","M","X", "L","XXL", "XL"]`});
     }
 
 
@@ -81,7 +86,7 @@ const createProduct = async(req,res)=>{
 
   
 
-    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes,installments}
+    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes:duplicateSize,installments}
 
     let createProduct = await productModel.create(productDetails)
 
