@@ -293,12 +293,15 @@ const updateProduct = async function(req,res){
 
     }
 
+    let findSizes = await productModel.findOne({_id:productId,isDeleted:false}).select({availableSizes:1})
 
     
     if(availableSizes){
       let sizeArr = ["S", "XS", "M", "X", "L", "XXL", "XL"]
       availableSizes = availableSizes.split(",").map((x)=>x.trim().toUpperCase())
       availableSizes = [...new Set(availableSizes)];
+      availableSizes = [...new Set(findSizes.availableSizes.concat(availableSizes))];
+    
       
 
 

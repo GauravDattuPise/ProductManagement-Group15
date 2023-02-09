@@ -19,7 +19,8 @@ const createOrder = async function(req,res){
             if(!["true","false"].includes(cancellable)) return res.status(400).send({status:false,message:"enter 'false' , if you want your order not cancellable"})
         }
         let cartCheck = await cartModels.findOne({_id:cartId,userId:userId}).select({__v:0,createdAt:0,updatedAt:0})
-        if(!cartCheck) return res.status(404).send({status:false,message:"Cart Not found"})
+        if(!cartCheck) return res.status(404).send({status:false,message:"Cart Not found, check cartId & userId"})
+        if(cartCheck.items.length===0) return res.status(400).send({status:false,message:"your cart is empty, you cannot create order"})
          let count = 0
         let totalQuantity = cartCheck.items.filter((x)=>{
             return count += x.quantity
@@ -80,7 +81,7 @@ const updateOrder = async(req,res)=>{
         }
 
     }else{
-        return res.status(400).send({status:false,message:"You can not update status of this order"})
+        return res.status(400).send({status:false,message:"You can not update status of this order, because its cannot be cancelled"})
 
     }
 
