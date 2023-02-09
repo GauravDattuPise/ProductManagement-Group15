@@ -1,8 +1,4 @@
 
-
-
-
-
 const cartModels = require("../models/cartModels")
 const orderModel = require("../models/orderModel")
 const userModel = require("../models/userModel")
@@ -20,10 +16,11 @@ const createOrder = async function(req,res){
         }
         let cartCheck = await cartModels.findOne({_id:cartId,userId:userId}).select({__v:0,createdAt:0,updatedAt:0})
         if(!cartCheck) return res.status(404).send({status:false,message:"Cart Not found, check cartId & userId"})
+
         if(cartCheck.items.length===0) return res.status(400).send({status:false,message:"your cart is empty, you cannot create order"})
          let count = 0
         let totalQuantity = cartCheck.items.filter((x)=>{
-            return count += x.quantity
+            return count += x.quantity  // count = count + x.quantity
         })
      
         let orderData = {
@@ -56,6 +53,7 @@ const updateOrder = async(req,res)=>{
     if(Object.keys(rest).length>0) return res.status(400).send({status:false,message:"pls send valid fields"})
     
     if(!orderId) return res.status(400).send({status:false,message:"provide orderId for update order"})
+    orderId = orderId.trim();
     if(!status) return res.status(400).send({status:false,message:"status is required , provide status for update order, [ completed or cancelled]"})
     let checkOrder = await orderModel.findOne({_id:orderId,userId:userId})
     if(!checkOrder) return res.status(404).send({status:false,message:"Order not found"})
@@ -74,14 +72,16 @@ const updateOrder = async(req,res)=>{
             checkOrder.cancellable = false
         }
 
-    } else if (checkCancel == false && status=="completed"){
+    } 
+    else if (checkCancel == false && status=="completed"){
         if(checkOrder.status == "pending") {
             checkOrder.status = status
            
         }
 
-    }else{
-        return res.status(400).send({status:false,message:"You can not update status of this order, because its cannot be cancelled"})
+    }
+    else{
+        return res.status(400).send({status:false,message:"You can not update status of this order, because its not cancellable"})
 
     }
 
