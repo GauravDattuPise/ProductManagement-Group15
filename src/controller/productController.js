@@ -25,7 +25,7 @@ const createProduct = async(req,res)=>{
       if(!validateTitle.test(title.split(" ").join("")))return res.status(400).send({ status: false, message: "plz enter valid title" });
 
     let findProductbyTitle = await productModel.findOne({ title: title });
-    if (findProductbyTitle)return res.status(409).send({ status: false, message: "title is already exist" });
+    if (findProductbyTitle)return res.status(400).send({ status: false, message: "title is already exist" });
 
 
 
@@ -35,7 +35,7 @@ const createProduct = async(req,res)=>{
 
     if(!price) return res.status(400).send({ status: false, message: "price is mandatory" });
     
-    if(!validator.isNumeric(price)) return res.status(409).send({ status: false, message: "Enter valid price" });
+    if(!validator.isNumeric(price)) return res.status(400).send({ status: false, message: "Enter valid price" });
 
     if(!currencyId) return res.status(400).send({ status: false, message: "Currency is mandatory" });
   

@@ -4,7 +4,7 @@ const bcrypt = require("bcrypt");
 const userModel = require("../models/userModel");
 const { uploadFile } = require("./aws");
 const { default: mongoose } = require("mongoose");
-const { findOne } = require("../models/userModel");
+
 
 let validateMobile = /^[6-9][0-9]{9}$/;
 
@@ -14,14 +14,11 @@ const createUser = async(req,res)=>{
     if (Object.keys(data).length === 0) return res.status(400).send({ message: "plz provide user's data" });
     
     
-
-    let {fname,lname,email,phone,password,address} = data
-   
-
-
-
+    
+    let {fname,lname,email,phone,password,address,...rest} = data
+    
+    if (Object.keys(rest).length > 0) return res.status(400).send({ message: "Invalid field data" });
 ///------------------------- Validation------------------------------------------
-
 
 
 if (!fname) return res.status(400).send({ status: false, message: "first name is mandatory" });
@@ -34,12 +31,12 @@ if (!validator.isAlpha(lname)) return res.status(400).send({ status: false, mess
 if (!email)return res.status(400).send({ status: false, message: "email is mandatory" });
 if (!validator.isEmail(email.trim()))return res.status(400).send({ status: false, message: "plz enter valid email" });
 let checkEmailExist = await userModel.findOne({email})
-if(checkEmailExist) return res.status(409).send({status:false,message:"This email already exist"})
+if(checkEmailExist) return res.status(400).send({status:false,message:"This email already exist"})
 
 if (!phone) return res.status(400).send({ status: false, message: "phone is mandatory" });
 if (!validateMobile.test(phone)) return res.status(400).send({ status: false, message: "plz enter valid Indian mobile number" });
 let checkPhoneExist = await userModel.findOne({phone})
-if(checkPhoneExist) return res.status(409).send({status:false,message:"This phone no. already exist"})
+if(checkPhoneExist) return res.status(400).send({status:false,message:"This phone no. already exist"})
 
 if (!password) return res.status(400).send({ status: false, message: "password is mandatory" });
 
@@ -48,38 +45,26 @@ if(!(/^(?=.*[a-z0-9])[a-zA-Z0-9!@#$%^&*]{8,15}$/).test(password))return res.stat
  status: false,  mesage: "password must be greater than 8 char and less than 15 char",
        });
 
-
-
-
-
-  
-  
   
 if(!address || (Object.keys(address).length===0)) return res.status(400).send({status:false,message:"Address is required"})
 let newAddress = JSON.parse(address)
 
-  let {shipping,billing} = newAddress
-
+  let {shipping,billing,...newRest} = newAddress
+  if (Object.keys(newRest).length > 0) return res.status(400).send({ message: "Invalid field data" });
 if(!shipping || (Object.keys(shipping).length===0)) return res.status(400).send({status:false,message:"Shipping address is required"})
 if(!shipping.street || !shipping.city || !shipping.pincode) return res.status(400).send({status:false,message:"Shipping address is incomplete"})
-if(!validator.isAlphanumeric(shipping.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
-if(!validator.isAlpha(shipping.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
-if (!/^[^0][0-9]{2}[0-9]{3}$/.test(shipping.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
-
-
-
+if(!validator.isAlphanumeric(shipping.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street in shipping"})
+if(!validator.isAlpha(shipping.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name in shipping"})
+if (!/^[^0][0-9]{2}[0-9]{3}$/.test(shipping.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number in shipping."});
 if(!billing || (Object.keys(billing).length===0)) return res.status(400).send({status:false,message:"Billing address is required"})
 
-if(!billing.street || !billing.city || !billing.pincode) return res.status(400).send({status:false,message:"Billing address is incomplete"})
-if(!validator.isAlphanumeric(billing.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
-if(!validator.isAlpha(billing.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
-if (!/^[^0][0-9]{2}[0-9]{3}$/.test(billing.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
-
-
-
+if(!billing.street || !billing.city || !billing.pincode) return res.status(400).send({status:false,message:"Billing address is incomplete "})
+if(!validator.isAlphanumeric(billing.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street in billing"})
+if(!validator.isAlpha(billing.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name in billing"})
+if (!/^[^0][0-9]{2}[0-9]{3}$/.test(billing.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number in billing."});
 
 let imageUrl = req.files
-    if(imageUrl.length===0) return res.status(400).send({status:false,message:"profileImaje is mandatory"})
+    if(imageUrl.length===0) return res.status(400).send({status:false,message:"profileImage is mandatory"})
     
     let urlType = imageUrl[0].originalname;
     if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
@@ -89,7 +74,7 @@ let imageUrl = req.files
       uploadedFileURL = await uploadFile(imageUrl[0]);
     } 
 
-    if(!uploadedFileURL) return res.status(400).send({ msg: "No file found" });
+    if(!uploadedFileURL) return res.status(404).send({ msg: "No file found" });
    
 
 //--------------------------------Duplicate email, phone --------------------------------------------
@@ -215,22 +200,25 @@ if (email ||(email=="")){
 
     if (!validator.isEmail(email.trim()))return res.status(400).send({ status: false, message: "plz enter valid email" });
     let checkEmailExist = await userModel.findOne({email})
-    if(checkEmailExist) return res.status(409).send({status:false,message:"This email already exist, enter another email"})
+    if(checkEmailExist) return res.status(400).send({status:false,message:"This email already exist, enter another email"})
 }
 
 if (phone ||(phone=="")){
 
     if (!validateMobile.test(phone)) return res.status(400).send({ status: false, message: "plz enter valid Indian mobile number" });
     let checkPhoneExist = await userModel.findOne({phone})
-    if(checkPhoneExist) return res.status(409).send({status:false,message:"This phone no. already exist, enter new number"})
+    if(checkPhoneExist) return res.status(400).send({status:false,message:"This phone no. already exist, enter new number"})
 }
 
 if (password ||(password=="")) {
 
-    if (password.length > 15 || password.length < 8)return res.status(400).send({
-        status: false,
-        mesage: "password must be greater than 8 char and less than 15 char",
-      });
+
+
+
+    if(!(/^(?=.*[a-z0-9])[a-zA-Z0-9!@#$%^&*]{8,15}$/).test(password))return res.status(400).send({
+        status: false,  mesage: "password must be greater than 8 char and less than 15 char",
+              });
+
 
    
 
@@ -267,17 +255,17 @@ if(address ){
 
         if(shipping.street){
 
-            if(!/^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/.test(shipping.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+            if(!/^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/.test(shipping.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street in shipping"})
             userNewAddress.shipping.street= shipping.street
         }
         if(shipping.city){
 
-            if(!validator.isAlpha(shipping.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
+            if(!validator.isAlpha(shipping.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name in shipping"})
             userNewAddress.shipping.city= shipping.city
         }
         if(shipping.pincode){
 
-            if (!/^[^0][0-9]{2}[0-9]{3}$/.test(shipping.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
+            if (!/^[^0][0-9]{2}[0-9]{3}$/.test(shipping.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number. in shipping"});
             userNewAddress.shipping.pincode= shipping.pincode
         }
         
@@ -293,17 +281,17 @@ if(address ){
 
         if(billing.street){
 
-            if(!/^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/.test(billing.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street"})
+            if(!/^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/.test(billing.street.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid street in billing"})
             userNewAddress.billing.street= billing.street
         }
         if(billing.city){
 
-            if(!validator.isAlpha(billing.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name"})
+            if(!validator.isAlpha(billing.city.split(" ").join(""))) return res.status(400).send({status:false,message:"Invalid city name in billing"})
             userNewAddress.billing.city= billing.city
         }
         if(billing.pincode){
 
-            if (!/^[^0][0-9]{2}[0-9]{3}$/.test(billing.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number."});
+            if (!/^[^0][0-9]{2}[0-9]{3}$/.test(billing.pincode))  return res.status(400).send({status: false,message: "Pincode should be a valid pincode number. in billing"});
             userNewAddress.billing.pincode= billing.pincode
         }
         
