@@ -317,7 +317,7 @@ if(imageUrl.length>0){
       uploadedFileURL = await uploadFile(imageUrl[0]);
     } 
     
-    if(!uploadedFileURL) return res.status(400).send({ msg: "No file found" });
+    if(!uploadedFileURL) return res.status(404).send({ msg: "No file found" });
 }
 
 

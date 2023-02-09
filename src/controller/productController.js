@@ -13,12 +13,11 @@ let validateTitle = /^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/;
 const createProduct = async(req,res)=>{
     try {
         let data = req.body
-    if (Object.keys(data).length === 0)
-    return res
-      .status(400)
-      .send({ status: false, message: "plz provide valid details" });
+    if (Object.keys(data).length === 0)return res.status(400).send({ status: false, message: "plz provide valid details" });
 
-    let {title,description,price,currencyId,currencyFormat,availableSizes,installments} = data
+    let {title,description,price,currencyId,currencyFormat,availableSizes,installments,style,...rest} = data
+
+    if (Object.keys(rest).length > 0)return res.status(400).send({ status: false, message: "plz provide valid details" });
 
      
       if(!title) return res.status(400).send({ status: false, message: "title is required" })
@@ -30,19 +29,22 @@ const createProduct = async(req,res)=>{
 
 
     if (!description)return res.status(400).send({ status: false, message: "description is mandatory" });
-    if (!validateTitle.test(description.split(" ").join("")))return res.status(400).send({ status: false, message: "plz enter valid description" });
+      description = description.trim()
+    if (!validateTitle.test(description))return res.status(400).send({ status: false, message: "plz enter valid description" });
 
 
     if(!price) return res.status(400).send({ status: false, message: "price is mandatory" });
     
-    if(!validator.isNumeric(price)) return res.status(400).send({ status: false, message: "Enter valid price" });
+    if(!validator.isNumeric(price.trim())) return res.status(400).send({ status: false, message: "Enter valid price" });
+    if(price < 1) return res.status(400).send({ status: false, message: "Price must be greater than zero" });
 
-    if(!currencyId) return res.status(400).send({ status: false, message: "Currency is mandatory" });
-  
+    if(!currencyId) return res.status(400).send({ status: false, message: "CurrencyID is mandatory" });
+      currencyId = currencyId.trim().toUpperCase()
     if(currencyId != "INR") return res.status(400).send({ status: false, message: "Invalid currency, plz enter [INR]" });
 
 
     if(!currencyFormat) return res.status(400).send({ status: false, message: "currencyFormat is mandatory,[₹]" });
+    currencyFormat = currencyFormat.trim()
     if(currencyFormat != "₹") return res.status(400).send({ status: false, message: "currencyFormat should be in,[₹]" });
  
 
@@ -57,10 +59,11 @@ const createProduct = async(req,res)=>{
       uploadedFileURL = await uploadFile(productImage[0]);
     } 
 
-    if(!uploadedFileURL) return res.status(400).send({status:false, message: "No file found" });
+    if(!uploadedFileURL) return res.status(404).send({status:false, message: "No file found" });
 
-    if(data.style){
-        if(!validator.isAlpha(data.style)) return res.status(400).send({status:false,message:"Invalid style details, style be in alphabates"})
+    if(style){
+      style = style.trim()
+        if(!validateTitle.test(style)) return res.status(400).send({status:false,message:"Invalid style details, style be in alphabates"})
     }
     
     let sizeArr = ["S","XS","M","X", "L","XXL", "XL"]
@@ -84,11 +87,12 @@ const createProduct = async(req,res)=>{
 
     if(installments){
        
-        if(!validator.isNumeric(installments)) return res.status(400).send({status:false, message: "Invalid Installment / installment must be greater than 0" });
+        if(!validator.isNumeric(installments)) return res.status(400).send({status:false, message: "Invalid Installment " });
+        if(installments < 1) return res.status(400).send({status:false, message: " installment must be greater than 0" });
     }
     
 
-    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes,installments}
+    let productDetails = {title,description,price,currencyId,currencyFormat,productImage:uploadedFileURL,availableSizes,installments,style}
 
     let createProduct = await productModel.create(productDetails)
 
@@ -161,11 +165,11 @@ const getProduct = async function(req,res){
 
       }
       
+      
       if(priceSort){
         priceSort = priceSort.trim()
-        if (priceSort != 1 && priceSort != - 1)  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
+        if (priceSort != 1 && priceSort != - 1 )  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
       } 
-
      
       
       let findProduct = await productModel.find(filter).sort({price:priceSort})
@@ -222,12 +226,13 @@ const updateProduct = async function(req,res){
      
    
  
-
+      
       if(productImage){
+        // if(productImage.length === 0) return res.status(400).send({status:false,message:"Pls send image file"})
         if(productImage.length>0){
 
           if(productImage[0].fieldname != "productImage"){
-            return res.send({status:false,message:"invalid image key, use [ productImage ] as key"})
+            return res.status(400).send({status:false,message:"invalid image key, use [ productImage ] as key"})
         }
         }
         
@@ -241,9 +246,10 @@ const updateProduct = async function(req,res){
 
       }
       
+      
       let {title,description,price,isFreeShipping,style,availableSizes,installments,...rest} = data
 
-      if(Object.keys(rest).length > 0) return res.status(400).send({staus:false,message:"pls provide valid fields"})
+      if(Object.keys(rest).length > 0) return res.status(400).send({staus:false,message:"pls provide valid fields or valid values"})
 
       if(title){
          title = title.replace(/\s+/g, ' ').trim()
@@ -283,7 +289,7 @@ const updateProduct = async function(req,res){
           uploadedFileURL = await uploadFile(productImage[0]);
         } 
 
-        if(!uploadedFileURL) return res.status(400).send({status:false, message: "No file found" });
+        if(!uploadedFileURL) return res.status(404).send({status:false, message: "No file found" });
       }
 
 
@@ -339,7 +345,8 @@ const updateProduct = async function(req,res){
 
 
 const deleteProduct = async function(req,res){
-  let data = req.params.productId
+  try {
+    let data = req.params.productId
 
   if(!mongoose.isValidObjectId(data)) return res.status(400).send({status:false,message:"product id invaild"})
 
@@ -348,6 +355,11 @@ const deleteProduct = async function(req,res){
   if(!checkProduct) return res.status(404).send({status:false,message:"product not found or already deleted"})
 
   return res.status(200).send({status:true,message:"Success",data:checkProduct})
+
+  } catch (error) {
+    console.log("error in delete Product ",error.message);
+    return res.status(500).send({status:false,data:error.mesage})
+  }
 }
 
 
