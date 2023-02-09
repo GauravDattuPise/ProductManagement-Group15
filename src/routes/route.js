@@ -43,7 +43,7 @@ route.put("/users/:userId/orders",verifyTokenAndAuthorization,updateOrder)
 
 route.all("/*",(req,res)=>{
     console.log("Plz enter valid route");
-    res.status(400).send({msg:"invalid route"})
+    res.status(400).send({status:false,message:"invalid route"})
 })
 
 

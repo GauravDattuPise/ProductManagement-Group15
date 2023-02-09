@@ -13,6 +13,7 @@ const verifyToken = async (req,res,next)=>{
 
     try {
         let token = req.headers["authorization"]
+     
     if(!token) return res.status(400).send({status:false,message:"Token is mandatory"})
     token = token.slice(7, token.length)
     
@@ -42,12 +43,13 @@ const verifyTokenAndAuthorization = async(req,res,next)=>{
     try {
         verifyToken(req,res,async()=>{
             let userId = req.params.userId;
+            if(!mongoose.isValidObjectId(userId)) return res.status(400).send({status:false,message:"Invalid userId"})
             let findUser = await userModel.findOne({_id:userId})
-            if(!findUser) return res.status(404).send({status:false,message:"User not found"})
+            // if(!findUser) return res.status(404).send({status:false,message:"User not found"})
             if(req.tokenDetails.userId == userId){
                 next()
             }else{
-                res.status(403).send({msg:"you are not authorized to perform this task"})
+                res.status(403).send({status:false,message:"you are not authorized to perform this task"})
             }
         })
     } catch (error) {

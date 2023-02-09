@@ -4,6 +4,7 @@ const  validator = require("validator");
 const { default: isBoolean } = require("validator/lib/isboolean");
 const productModel = require("../models/productModel");
 const { uploadFile } = require("./aws");
+const { isValidTitle } = require("./validator");
 
 
 let validateTitle = /^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/;
@@ -13,24 +14,25 @@ let validateTitle = /^[^0-9][a-z , A-Z0-9_ ? @ ! $ % & * : ]+$/;
 const createProduct = async(req,res)=>{
     try {
         let data = req.body
-    if (Object.keys(data).length === 0)return res.status(400).send({ status: false, message: "plz provide valid details" });
+    if (Object.keys(data).length === 0)return res.status(400).send({ status: false, message: "plz provide product details" });
 
     let {title,description,price,currencyId,currencyFormat,availableSizes,installments,style,...rest} = data
 
-    if (Object.keys(rest).length > 0)return res.status(400).send({ status: false, message: "plz provide valid details" });
+    if (Object.keys(rest).length > 0)return res.status(400).send({ status: false, message: "plz provide valid fields" });
 
-     
+ 
       if(!title) return res.status(400).send({ status: false, message: "title is required" })
-      if(!validateTitle.test(title.split(" ").join("")))return res.status(400).send({ status: false, message: "plz enter valid title" });
+      title = title.replace(/\s+/g, ' ')
+      if(!isValidTitle(title))return res.status(400).send({ status: false, message: "plz enter valid title" });
 
     let findProductbyTitle = await productModel.findOne({ title: title });
     if (findProductbyTitle)return res.status(400).send({ status: false, message: "title is already exist" });
 
 
-
+ 
     if (!description)return res.status(400).send({ status: false, message: "description is mandatory" });
-      description = description.trim()
-    if (!validateTitle.test(description))return res.status(400).send({ status: false, message: "plz enter valid description" });
+    description = description.replace(/\s+/g, ' ')
+    if (!isValidTitle(description))return res.status(400).send({ status: false, message: "plz enter valid description" });
 
 
     if(!price) return res.status(400).send({ status: false, message: "price is mandatory" });
@@ -49,13 +51,20 @@ const createProduct = async(req,res)=>{
  
 
     let productImage = req.files
+
     if(productImage.length===0) return res.status(400).send({status:false,message:"productImage is mandatory"})
     
     let urlType = productImage[0].originalname;
     if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
     
     let uploadedFileURL;
+    
+     if(productImage[0].fieldname != "productImage"){
+            return res.status(400).send({status:false,message:"invalid image key, use [ productImage ] as key"})
+        }
+
     if (productImage.length > 0) {
+      
       uploadedFileURL = await uploadFile(productImage[0]);
     } 
 
@@ -168,7 +177,7 @@ const getProduct = async function(req,res){
       
       if(priceSort){
         priceSort = priceSort.trim()
-        if (priceSort != 1 && priceSort != - 1 )  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
+        if (priceSort != 1 && priceSort != -1 || priceSort === "01" || priceSort==="-01" )  return res.status(400).send({status:false,message:"priceSort must be 1 or -1"})
       } 
      
       
@@ -215,7 +224,7 @@ const updateProduct = async function(req,res){
   try {
       let productId = req.params.productId
   
-     
+      
       if(!mongoose.isValidObjectId(productId)) return res.status(400).send({status:false,message:"product id invaild"})
 
       
@@ -252,15 +261,15 @@ const updateProduct = async function(req,res){
       if(Object.keys(rest).length > 0) return res.status(400).send({staus:false,message:"pls provide valid fields or valid values"})
 
       if(title){
-         title = title.replace(/\s+/g, ' ').trim()
-         if(!validateTitle.test(title)) return res.status(400).send({staus:false,message:"Given title is invalid"})
+         title = title.replace(/\s+/g, ' ')
+         if(!isValidTitle(title)) return res.status(400).send({staus:false,message:"Given title is invalid"})
           checkTitle = await productModel.findOne({title:title,isDeleted:false})
           if(checkTitle) return res.status(400).send({staus:false,message:"This title already exist ,pls provide another title"})
       }
 
       if(description){ 
          description = description.replace(/\s+/g, ' ').trim()
-         if(!validateTitle.test(description)) return res.status(400).send({staus:false,message:"Given description is invalid"})
+         if(!isValidTitle(description)) return res.status(400).send({staus:false,message:"Given description is invalid"})
       }
 
     
@@ -285,9 +294,13 @@ const updateProduct = async function(req,res){
         
         let urlType = productImage[0].originalname;
         if(!/\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(urlType)) return res.status(400).send({status:false,message:"Plz provide valid image file"})
-        if (productImage.length > 0) {
+      
+        if(productImage[0].fieldname != "productImage") return res.status(400).send({status:false,message:"invalid image key, use [ productImage ] as key"})
+          
+    
+
           uploadedFileURL = await uploadFile(productImage[0]);
-        } 
+  
 
         if(!uploadedFileURL) return res.status(404).send({status:false, message: "No file found" });
       }
@@ -295,10 +308,12 @@ const updateProduct = async function(req,res){
 
       if(style){
         style = style.replace(/\s+/g, ' ').trim()
-        if(!validateTitle.test(style)) return res.status(400).send({status:false,message:"Invalid style details, style be in alphabates"})
+        if(!isValidTitle(style)) return res.status(400).send({status:false,message:"Invalid style details, style be in alphabates"})
 
     }
 
+    let checkProduct = await productModel.findOne({_id:productId,isDeleted:false})
+    if(!checkProduct) return res.status(404).send({status:false,message:"product not found"})
     let findSizes = await productModel.findOne({_id:productId,isDeleted:false}).select({availableSizes:1})
 
     
@@ -332,7 +347,7 @@ const updateProduct = async function(req,res){
 
 
    let updatedData = await productModel.findOneAndUpdate({_id:productId,isDeleted:false},updateProductData,{new:true})
-      if(!updatedData)  return res.status(404).send({staus:false,message:"No Product Found"})
+      // if(!updatedData)  return res.status(404).send({staus:false,message:"No Product Found"})
       return res.status(200).send({status:true,message:"Success",data:updatedData})
 
 

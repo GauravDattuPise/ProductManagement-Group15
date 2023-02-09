@@ -3,16 +3,16 @@ const ObjectId = mongoose.Schema.Types.ObjectId;
 
 const cartSchema = new mongoose.Schema(
   {
-    userId: { type: ObjectId, ref: "User", required: true,unique:true },
+    userId: { type: ObjectId, ref: "User", required: true,unique:true , trim:true},
    
     items: [
       {
-        productId: { type: ObjectId, ref: "Product", require: true },
-        quantity: { type: Number, required: true, default:1 },
+        productId: { type: ObjectId, ref: "Product", require: true, trim:true },
+        quantity: { type: Number, required: true, default:1 , trim:true},
       },
     ],
-    totalPrice: { type: Number, required: true },
-    totalItems: { type: Number, required: true },
+    totalPrice: { type: Number, required: true, trim:true },
+    totalItems: { type: Number, required: true , trim:true},
   },
   { timestamps: true }
 );

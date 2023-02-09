@@ -61,7 +61,10 @@ const createCart = async(req,res)=>{
 
     if(checkuserHasCart) {
             if(!cartId) return res.status(400).send({status:false,message:" your cart has been created, enter your cartId"})
+
             cartId = cartId.trim()
+            let checkCart = await cartModels.findOne({_id:cartId})
+            if(!checkCart) return res.status(404).send({status:false,message:"This cart not found"})
             if(checkuserHasCart._id!=cartId) return res.status(400).send({status:false,message:"This cartId does not belong to given userId"})
 
 
@@ -211,6 +214,8 @@ const updateCart = async function (req, res) {
         res.status(500).send({ status: false, message: error.message })
     }
 }
+
+
 
 const getCart = async function (req, res) {
     try {
