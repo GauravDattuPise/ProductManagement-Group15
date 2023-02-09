@@ -104,7 +104,8 @@ const loginUser = async (req,res)=>{
     let data = req.body
 
     if (Object.keys(data).length === 0) return res.status(400).send({ message: "plz provide user's data" });
-    let {email,password} = data
+    let {email,password,...rest} = data
+    if (Object.keys(rest).length >0) return res.status(400).send({ message: "plz provide valid data [email & password only]" });
         
     if (!email)return res.status(400).send({ status: false, message: "email is mandatory" });
     if (!validator.isEmail(email.trim()))return res.status(400).send({ status: false, message: "plz enter valid email" });
@@ -113,6 +114,7 @@ const loginUser = async (req,res)=>{
     if(!findUser) return res.status(404).send({status:false, message:"User not found"})
 
      if (!password) return res.status(400).send({ status: false, message: "password is mandatory" });
+      password= password.trim()
      if (password.length > 15 || password.length < 8)return res.status(400).send({
      status: false,
      mesage: "password must be greater than 8 char and less than 15 char",
@@ -129,13 +131,13 @@ const loginUser = async (req,res)=>{
      let token = JWT.sign({ userId: userId }, "group2project-5", {expiresIn: 8600});
   
 
-     res.status(200).send({status:true,message:"User login successfull", data:{userId:userId, token:token}})
+    return res.status(200).send({status:true,message:"User login successfull", data:{userId:userId, token:token}})
 
    } catch (error) {
-
-    res.status(500).send({status:false,message:error.mesage})
-
     console.log("error in loginUser", error.message)
+    return res.status(500).send({status:false,message:error.mesage})
+
+  
 
    }
 }
@@ -187,12 +189,12 @@ const updateUser = async(req,res)=>{
 
 if (fname ||(fname=="")) {
 
-    if (!validator.isAlpha(fname) ) return res.status(400).send({ status: false, message: "plz enter valid first name,  includes only alphabates" });
+    if (!validator.isAlpha(fname.trim()) ) return res.status(400).send({ status: false, message: "plz enter valid first name,  includes only alphabates" });
 }
 
 if (lname ||(lname=="")){
 
-    if (!validator.isAlpha(lname)) return res.status(400).send({ status: false, message: "plz enter valid last name,  includes only alphabates" });
+    if (!validator.isAlpha(lname.trim())) return res.status(400).send({ status: false, message: "plz enter valid last name,  includes only alphabates" });
 }
 
 
@@ -205,7 +207,7 @@ if (email ||(email=="")){
 
 if (phone ||(phone=="")){
 
-    if (!validateMobile.test(phone)) return res.status(400).send({ status: false, message: "plz enter valid Indian mobile number" });
+    if (!validateMobile.test(phone.trim())) return res.status(400).send({ status: false, message: "plz enter valid Indian mobile number" });
     let checkPhoneExist = await userModel.findOne({phone})
     if(checkPhoneExist) return res.status(400).send({status:false,message:"This phone no. already exist, enter new number"})
 }
@@ -215,7 +217,7 @@ if (password ||(password=="")) {
 
 
 
-    if(!(/^(?=.*[a-z0-9])[a-zA-Z0-9!@#$%^&*]{8,15}$/).test(password))return res.status(400).send({
+    if(!(/^(?=.*[a-z0-9])[a-zA-Z0-9!@#$%^&*]{8,15}$/).test(password.trim()))return res.status(400).send({
         status: false,  mesage: "password must be greater than 8 char and less than 15 char",
               });
 
@@ -333,11 +335,11 @@ if(imageUrl.length>0){
     let updateUser = await userModel.findOneAndUpdate({_id:userId},userUpdateData,{new:true})
   
 
-    res.status(200).send({status:true, message:"User profile updated",data:updateUser})
+    return res.status(200).send({status:true, message:"User profile updated",data:updateUser})
 
     } catch (error) {
         console.log("error in updateUser",error.message)
-        res.status(500).send({status:false,message:error.message})
+        return res.status(500).send({status:false,message:error.message})
     }
 }
 
